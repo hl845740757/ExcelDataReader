@@ -8,10 +8,19 @@ namespace ExcelDataReader;
 public class ExcelReaderConfiguration
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="ExcelReaderConfiguration"/> class.
+    /// 允许指定CodePage以避免抛出异常
+    /// </summary>
+    public ExcelReaderConfiguration(int codePage = 1252)
+    {
+        FallbackEncoding = Encoding.GetEncoding(codePage);
+    }
+
+    /// <summary>
     /// Gets or sets a value indicating the encoding to use when the input XLS lacks a CodePage record,
     /// or when the input CSV lacks a BOM and does not parse as UTF8. Default: cp1252. (XLS BIFF2-5 and CSV only).
     /// </summary>
-    public Encoding FallbackEncoding { get; set; } = Encoding.GetEncoding(1252);
+    public Encoding FallbackEncoding { get; set; }
 
     /// <summary>
     /// Gets or sets the password used to open password protected workbooks.
@@ -44,4 +53,9 @@ public class ExcelReaderConfiguration
     /// Default: 0 - analyzes the entire file (CSV only, has no effect on other formats).
     /// </summary>
     public int AnalyzeInitialCsvRows { get; set; }
+
+    /// <summary>
+    /// 读表时返回原始的字符串值
+    /// </summary>
+    public bool ReturnsRawValue { get; set; } = false;
 }

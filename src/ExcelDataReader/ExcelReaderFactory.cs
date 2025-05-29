@@ -47,7 +47,7 @@ public static class ExcelReaderFactory
 
             if (TryGetEncryptedPackage(fileStream, document, configuration.Password, out stream))
             {
-                return new ExcelOpenXmlReader(stream);
+                return new ExcelOpenXmlReader(stream, configuration.ReturnsRawValue);
             }
 
             throw new ExcelReaderException(Errors.ErrorStreamWorkbookNotFound);
@@ -61,7 +61,7 @@ public static class ExcelReaderFactory
         if (probe[0] == 0x50 && probe[1] == 0x4B)
         {
             // zip files start with 'PK'
-            return new ExcelOpenXmlReader(fileStream);
+            return new ExcelOpenXmlReader(fileStream, configuration.ReturnsRawValue);
         }
 
         throw new HeaderException(Errors.ErrorHeaderSignature);
@@ -135,7 +135,7 @@ public static class ExcelReaderFactory
             var document = new CompoundDocument(fileStream);
             if (TryGetEncryptedPackage(fileStream, document, configuration.Password, out var stream))
             {
-                return new ExcelOpenXmlReader(stream);
+                return new ExcelOpenXmlReader(stream, configuration.ReturnsRawValue);
             }
 
             throw new ExcelReaderException(Errors.ErrorCompoundNoOpenXml);
@@ -144,7 +144,7 @@ public static class ExcelReaderFactory
         if (probe[0] == 0x50 && probe[1] == 0x4B)
         {
             // Zip files start with 'PK'
-            return new ExcelOpenXmlReader(fileStream);
+            return new ExcelOpenXmlReader(fileStream, configuration.ReturnsRawValue);
         }
 
         throw new HeaderException(Errors.ErrorHeaderSignature);

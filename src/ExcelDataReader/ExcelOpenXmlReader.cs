@@ -4,10 +4,10 @@ namespace ExcelDataReader;
 
 internal sealed class ExcelOpenXmlReader : ExcelDataReader<XlsxWorkbook, XlsxWorksheet>
 {
-    public ExcelOpenXmlReader(Stream stream)
+    public ExcelOpenXmlReader(Stream stream, bool returnsRawValue = false)
     {
         Document = new(stream);
-        Workbook = new XlsxWorkbook(Document);
+        Workbook = new XlsxWorkbook(Document, returnsRawValue);
 
         // By default, the data reader is positioned on the first result.
         Reset();

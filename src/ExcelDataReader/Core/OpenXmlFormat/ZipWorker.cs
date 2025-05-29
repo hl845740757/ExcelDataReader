@@ -184,7 +184,7 @@ internal sealed partial class ZipWorker : IDisposable
         throw new Exceptions.HeaderException(Errors.ErrorZipNoOpenXml);
     }
 
-    public RecordReader? GetWorksheetReader(string sheetPath, bool preparing)
+    public RecordReader? GetWorksheetReader(string sheetPath, bool preparing, bool returnsRawValue)
     {
         // its possible sheetPath starts with /xl. in this case trim the /
         // see the test "Issue_11522_OpenXml"
@@ -196,7 +196,7 @@ internal sealed partial class ZipWorker : IDisposable
         {
             return Path.GetExtension(sheetPath) switch
             {
-                ".xml" => new XmlWorksheetReader(XmlReader.Create(OpenZipEntry(zipEntry), XmlSettings), preparing),
+                ".xml" => new XmlWorksheetReader(XmlReader.Create(OpenZipEntry(zipEntry), XmlSettings), preparing, returnsRawValue),
                 ".bin" => new BiffWorksheetReader(OpenZipEntry(zipEntry), preparing),
                 _ => null,
             };

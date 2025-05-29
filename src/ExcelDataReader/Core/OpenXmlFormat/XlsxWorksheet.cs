@@ -6,10 +6,11 @@ namespace ExcelDataReader.Core.OpenXmlFormat;
 
 internal sealed class XlsxWorksheet : IWorksheet
 {
-    public XlsxWorksheet(ZipWorker document, XlsxWorkbook workbook, SheetRecord refSheet)
+    public XlsxWorksheet(ZipWorker document, XlsxWorkbook workbook, SheetRecord refSheet, bool returnsRawValue = false)
     {
         Document = document;
         Workbook = workbook;
+        ReturnsRawValue = returnsRawValue;
 
         Name = refSheet.Name;
         VisibleState = refSheet.VisibleState;
@@ -19,7 +20,7 @@ internal sealed class XlsxWorksheet : IWorksheet
         if (string.IsNullOrEmpty(Path))
             return;
 
-        using var sheetStream = Document.GetWorksheetReader(Path, true);
+        using var sheetStream = Document.GetWorksheetReader(Path, preparing: true, returnsRawValue: false);
         
         if (sheetStream == null)
             return;
@@ -101,13 +102,15 @@ internal sealed class XlsxWorksheet : IWorksheet
     private ZipWorker Document { get; }
 
     private XlsxWorkbook Workbook { get; }
+    
+    private bool ReturnsRawValue { get; }
 
     public IEnumerable<Row> ReadRows()
     {
         if (string.IsNullOrEmpty(Path))
             yield break;
 
-        using RecordReader sheetStream = Document.GetWorksheetReader(Path, false);
+        using RecordReader sheetStream = Document.GetWorksheetReader(Path, false, ReturnsRawValue);
         if (sheetStream == null)
             yield break;
 
@@ -148,7 +151,8 @@ internal sealed class XlsxWorksheet : IWorksheet
                 case CellRecord cell when inSheetData:
                     // TODO What if we get a cell without a row?
                     var extendedFormat = Workbook.GetEffectiveCellStyle(cell.XfIndex, 0);
-                    cells.Add(new Cell(cell.ColumnIndex, ConvertCellValue(cell.Value, extendedFormat.NumberFormatIndex), extendedFormat, cell.Error));
+                    object value = ConvertCellValue(cell.Value, extendedFormat.NumberFormatIndex);
+                    cells.Add(new Cell(cell.ColumnIndex, value, extendedFormat, cell.Error));
                     foundRowOrCell = true;
                     break;
             }
@@ -191,7 +195,7 @@ internal sealed class XlsxWorksheet : IWorksheet
 
                 return null;
 
-            case double number:
+            case double number: // if 'ReturnsRawValue' is true, we cant reach here
                 var format = Workbook.GetNumberFormatString(numberFormatIndex);
                 if (format != null)
                 {
@@ -203,10 +207,10 @@ internal sealed class XlsxWorksheet : IWorksheet
 
                 return number;
 
-            case DateTime date:
+            case DateTime date: // if 'ReturnsRawValue' is true, we cant reach here
                 return date;
 
-            case string s:
+            case string s when !ReturnsRawValue:
                 NumberFormatString numberFormat = Workbook.GetNumberFormatString(numberFormatIndex);
                 if (numberFormat.IsTimeSpanFormat && TryParseToTimeSpan(s, out var timeSpan))
                 {

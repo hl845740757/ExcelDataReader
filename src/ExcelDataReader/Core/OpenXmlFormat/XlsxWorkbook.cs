@@ -5,10 +5,12 @@ namespace ExcelDataReader.Core.OpenXmlFormat;
 internal sealed class XlsxWorkbook : CommonWorkbook, IWorkbook<XlsxWorksheet>
 {
     private readonly ZipWorker _zipWorker;
+    private readonly bool _returnsRawValue;
            
-    public XlsxWorkbook(ZipWorker zipWorker)
+    public XlsxWorkbook(ZipWorker zipWorker, bool returnsRawValue = false)
     {
         _zipWorker = zipWorker;
+        _returnsRawValue = returnsRawValue;
         ReadWorkbook();
         ReadSharedStrings();
         ReadStyles();
@@ -24,7 +26,7 @@ internal sealed class XlsxWorkbook : CommonWorkbook, IWorkbook<XlsxWorksheet>
 
     private List<SheetRecord> Sheets { get; } = [];
 
-    public IEnumerable<XlsxWorksheet> ReadWorksheets() => Sheets.Select(sheet => new XlsxWorksheet(_zipWorker, this, sheet));
+    public IEnumerable<XlsxWorksheet> ReadWorksheets() => Sheets.Select(sheet => new XlsxWorksheet(_zipWorker, this, sheet, _returnsRawValue));
 
     private void ReadWorkbook()
     {

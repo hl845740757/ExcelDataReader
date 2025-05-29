@@ -4,7 +4,7 @@ using ExcelDataReader.Core.OpenXmlFormat.Records;
 
 namespace ExcelDataReader.Core.OpenXmlFormat.XmlFormat;
 
-internal sealed class XmlWorksheetReader(XmlReader reader, bool preparing) : XmlRecordReader(reader)
+internal sealed class XmlWorksheetReader(XmlReader reader, bool preparing, bool returnsRawValue) : XmlRecordReader(reader)
 {
     private const string NWorksheet = "worksheet";
     private const string NSheetData = "sheetData";
@@ -321,68 +321,68 @@ internal sealed class XmlWorksheetReader(XmlReader reader, bool preparing) : Xml
         }
 
         return new CellRecord(columnIndex, xfIndex, value, error);
-
-        static void ConvertCellValue(string rawValue, string aT, out object value, out CellError? error)
-        {
-            const NumberStyles style = NumberStyles.Any;
-
-            error = null;
-            switch (aT)
-            {
-                case AS: //// if string
-                    if (int.TryParse(rawValue, style, CultureInfo.InvariantCulture, out var sstIndex))
-                    {
-                        // TODO: Can we get here when the sstIndex is not a valid index in the SST list?
-                        value = sstIndex;
-                        return;
-                    }
-
-                    value = rawValue;
-                    return;
-                case NInlineStr: //// if string inline
-                case NStr: //// if cached formula string
-                    value = Helpers.ConvertEscapeChars(rawValue);
-                    return;
-                case "b": //// boolean
-                    value = rawValue == "1";
-                    return;
-                case "d": //// ISO 8601 date
-                    if (DateTime.TryParseExact(rawValue, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.AllowLeadingWhite | DateTimeStyles.AllowTrailingWhite, out var date))
-                    {
-                        value = date;
-                        return;
-                    }
-
-                    value = rawValue;
-                    return;
-                case "e": //// error
-                    error = ConvertError(rawValue);
-                    value = null;
-                    return;
-                default:
-                    if (double.TryParse(rawValue, style, CultureInfo.InvariantCulture, out double number))
-                    {
-                        value = number;
-                        return;
-                    }
-
-                    value = rawValue;
-                    return;
-            }
-        }
-
-        // 2.5.97.2 BErr
-        static CellError? ConvertError(string e) => e switch
-        {
-            "#NULL!" => CellError.NULL,
-            "#DIV/0!" => CellError.DIV0,
-            "#VALUE!" => CellError.VALUE,
-            "#REF!" => CellError.REF,
-            "#NAME?" => CellError.NAME,
-            "#NUM!" => CellError.NUM,
-            "#N/A" => CellError.NA,
-            "#GETTING_DATA" => CellError.GETTING_DATA,
-            _ => null,
-        };
     }
+    
+    private void ConvertCellValue(string rawValue, string aT, out object value, out CellError? error)
+    {
+        const NumberStyles style = NumberStyles.Any;
+
+        error = null;
+        switch (aT)
+        {
+            case AS: //// if string
+                if (int.TryParse(rawValue, style, CultureInfo.InvariantCulture, out var sstIndex))
+                {
+                    // TODO: Can we get here when the sstIndex is not a valid index in the SST list?
+                    value = sstIndex;
+                    return;
+                }
+
+                value = rawValue;
+                return;
+            case NInlineStr: //// if string inline
+            case NStr: //// if cached formula string
+                value = Helpers.ConvertEscapeChars(rawValue);
+                return;
+            case "b" when !returnsRawValue: //// boolean
+                value = rawValue == "1";
+                return;
+            case "d" when !returnsRawValue: //// ISO 8601 date
+                if (DateTime.TryParseExact(rawValue, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.AllowLeadingWhite | DateTimeStyles.AllowTrailingWhite, out var date))
+                {
+                    value = date;
+                    return;
+                }
+
+                value = rawValue;
+                return;
+            case "e": //// error
+                error = ConvertError(rawValue);
+                value = rawValue; // modified by wjybxx
+                return;
+            default:
+                if (!returnsRawValue && double.TryParse(rawValue, style, CultureInfo.InvariantCulture, out double number))
+                {
+                    value = number;
+                    return;
+                }
+
+                value = rawValue;
+                return;
+        }
+    }
+
+    // 2.5.97.2 BErr
+    private CellError? ConvertError(string e) => e switch
+    {
+        "#NULL!" => CellError.NULL,
+        "#DIV/0!" => CellError.DIV0,
+        "#VALUE!" => CellError.VALUE,
+        "#REF!" => CellError.REF,
+        "#NAME?" => CellError.NAME,
+        "#NUM!" => CellError.NUM,
+        "#N/A" => CellError.NA,
+        "#GETTING_DATA" => CellError.GETTING_DATA,
+        _ => null,
+    };
 }
