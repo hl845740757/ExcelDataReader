@@ -11,9 +11,9 @@ public class ExcelReaderConfiguration
     /// Initializes a new instance of the <see cref="ExcelReaderConfiguration"/> class.
     /// 允许指定CodePage以避免抛出异常
     /// </summary>
-    public ExcelReaderConfiguration(int codePage = 1252)
+    public ExcelReaderConfiguration(Encoding encoding = null) 
     {
-        FallbackEncoding = Encoding.GetEncoding(codePage);
+        FallbackEncoding = encoding ?? Encoding.GetEncoding(1252);
     }
 
     /// <summary>
